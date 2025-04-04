@@ -1,6 +1,6 @@
 # FacturaPro - Générateur de Factures Professionnel
 
-![FacturaPro Logo](https://via.placeholder.com/150x50.png?text=FacturaPro)
+![FacturaPro Logo](Capture.png)
 
 ## Description
 
