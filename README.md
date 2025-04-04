@@ -19,7 +19,7 @@ FacturaPro est une application web moderne qui permet de créer, gérer et expor
 
 ## Captures d'écran
 
-![Aperçu de l'application](https://via.placeholder.com/800x400.png?text=Apercu+Application)
+![Aperçu de l'application](Capture.png)
 
 ## Technologies utilisées
 
