@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/css/main.21ea9468.css",
-    "main.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/main.12b360b3.js",
+    "main.css": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/css/main.3e1882b8.css",
+    "main.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/main.3fe51f1e.js",
     "static/js/239.c959253d.chunk.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/239.c959253d.chunk.js",
     "static/js/762.e5d6dcd2.chunk.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/762.e5d6dcd2.chunk.js",
     "static/js/213.7c2bb271.chunk.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/213.7c2bb271.chunk.js",
     "static/js/732.b3355439.chunk.js": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/732.b3355439.chunk.js",
     "index.html": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/index.html",
-    "main.21ea9468.css.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/css/main.21ea9468.css.map",
-    "main.12b360b3.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/main.12b360b3.js.map",
+    "main.3e1882b8.css.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/css/main.3e1882b8.css.map",
+    "main.3fe51f1e.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/main.3fe51f1e.js.map",
     "239.c959253d.chunk.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/239.c959253d.chunk.js.map",
     "762.e5d6dcd2.chunk.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/762.e5d6dcd2.chunk.js.map",
     "213.7c2bb271.chunk.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/213.7c2bb271.chunk.js.map",
     "732.b3355439.chunk.js.map": "/FacturaPro---G-n-rateur-de-Factures-Professionnel/static/js/732.b3355439.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.21ea9468.css",
-    "static/js/main.12b360b3.js"
+    "static/css/main.3e1882b8.css",
+    "static/js/main.3fe51f1e.js"
   ]
 }
