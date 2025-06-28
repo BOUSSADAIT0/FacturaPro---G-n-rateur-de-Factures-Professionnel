@@ -3,7 +3,7 @@ import { Printer, Download } from 'lucide-react';
 
 const FactureGenerator = () => {
   // État pour stocker les informations de la facture
-  const [factureNumber, setFactureNumber] = useState(1727978687);
+  const [factureNumber, setFactureNumber] = useState('');
   const [fournisseur, setFournisseur] = useState({
     name: '',
     address: '',
@@ -26,12 +26,33 @@ const FactureGenerator = () => {
   // Références pour l'impression
   const factureRef = useRef(null);
 
-  // Charger le dernier numéro de facture depuis le stockage local au chargement du composant
+  // Fonction pour générer le numéro de facture basé sur la date
+  const generateFactureNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateKey = `${year}${month}${day}`;
+    
+    // Récupérer le compteur pour aujourd'hui depuis le localStorage
+    const todayCounters = JSON.parse(localStorage.getItem('factureCounters') || '{}');
+    const todayCount = todayCounters[dateKey] || 0;
+    
+    // Incrémenter le compteur
+    const newCount = todayCount + 1;
+    todayCounters[dateKey] = newCount;
+    localStorage.setItem('factureCounters', JSON.stringify(todayCounters));
+    
+    // Générer le numéro de facture : AAAA + MM + JJ + NN (numéro séquentiel)
+    const factureNum = `${year}${month}${day}${String(newCount).padStart(2, '0')}`;
+    
+    return factureNum;
+  };
+
+  // Charger le numéro de facture au chargement du composant
   useEffect(() => {
-    const lastFactureNumber = localStorage.getItem('lastFactureNumber');
-    if (lastFactureNumber) {
-      setFactureNumber(parseInt(lastFactureNumber, 10));
-    }
+    const newFactureNumber = generateFactureNumber();
+    setFactureNumber(newFactureNumber);
   }, []);
 
   // Fonction pour formatter la date actuelle
@@ -158,11 +179,6 @@ const FactureGenerator = () => {
           const fileName = generateFileName();
           pdf.save(fileName);
           
-          // Mettre à jour et enregistrer le numéro de facture pour la prochaine utilisation
-          const nextFactureNumber = factureNumber + 1;
-          setFactureNumber(nextFactureNumber);
-          localStorage.setItem('lastFactureNumber', nextFactureNumber);
-
           // Nettoyer
           document.body.removeChild(tempDiv);
         });
@@ -430,7 +446,7 @@ const FactureGenerator = () => {
               <p>FRANCE</p>
               <p>SIRET : {fournisseur.siret}</p>
               {/* <p>Page : 1/1</p> */}
-              <p>Numéro de facture : {String(factureNumber).padStart(9, '0')}</p>
+              <p>Numéro de facture : {factureNumber ? `${factureNumber.slice(0, 4)}-${factureNumber.slice(4, 6)}-${factureNumber.slice(6, 8)}-${factureNumber.slice(8)}` : ''}</p>
             </div>
             <div>
               <p className="font-bold">Client :</p>
