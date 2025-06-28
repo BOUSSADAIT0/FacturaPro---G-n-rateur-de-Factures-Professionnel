@@ -4,6 +4,7 @@ import { Printer, Download } from 'lucide-react';
 const FactureGenerator = () => {
   // État pour stocker les informations de la facture
   const [factureNumber, setFactureNumber] = useState('');
+  const [errors, setErrors] = useState([]);
   const [fournisseur, setFournisseur] = useState({
     name: '',
     address: '',
@@ -26,27 +27,58 @@ const FactureGenerator = () => {
   // Références pour l'impression
   const factureRef = useRef(null);
 
-  // Fonction pour générer le numéro de facture basé sur la date
+  // Fonction pour générer le numéro de facture basé sur la date avec UUID
   const generateFactureNumber = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
-    const dateKey = `${year}${month}${day}`;
     
-    // Récupérer le compteur pour aujourd'hui depuis le localStorage
-    const todayCounters = JSON.parse(localStorage.getItem('factureCounters') || '{}');
-    const todayCount = todayCounters[dateKey] || 0;
+    // Générer un UUID court pour l'unicité
+    const uuid = Math.random().toString(36).substring(2, 10).toUpperCase();
     
-    // Incrémenter le compteur
-    const newCount = todayCount + 1;
-    todayCounters[dateKey] = newCount;
-    localStorage.setItem('factureCounters', JSON.stringify(todayCounters));
-    
-    // Générer le numéro de facture : AAAA + MM + JJ + NN (numéro séquentiel)
-    const factureNum = `${year}${month}${day}${String(newCount).padStart(2, '0')}`;
+    // Générer le numéro de facture : AAAA + MM + JJ + UUID
+    const factureNum = `${year}${month}${day}-${uuid}`;
     
     return factureNum;
+  };
+
+  // Fonction pour valider tous les champs
+  const validateFields = () => {
+    const newErrors = [];
+
+    // Validation Fournisseur
+    if (!fournisseur.name.trim()) newErrors.push("Le nom de l'entreprise fournisseur est obligatoire");
+    if (!fournisseur.address.trim()) newErrors.push("L'adresse du fournisseur est obligatoire");
+    if (!fournisseur.city.trim()) newErrors.push("La ville du fournisseur est obligatoire");
+    if (!fournisseur.siret.trim()) newErrors.push("Le SIRET du fournisseur est obligatoire");
+    if (!fournisseur.autoEntrepreneurName.trim()) newErrors.push("Le nom de l'auto-entrepreneur est obligatoire");
+    if (!fournisseur.iban.trim()) newErrors.push("L'IBAN est obligatoire");
+
+    // Validation Client
+    if (!client.name.trim()) newErrors.push("Le nom du client est obligatoire");
+    if (!client.address.trim()) newErrors.push("L'adresse du client est obligatoire");
+    if (!client.city.trim()) newErrors.push("La ville du client est obligatoire");
+    if (!client.siret.trim()) newErrors.push("Le SIRET du client est obligatoire");
+
+    // Validation Date d'échéance
+    if (!dateEcheance) newErrors.push("La date d'échéance est obligatoire");
+
+    // Validation Articles
+    const hasValidItems = items.some(item => 
+      item.description.trim() && item.quantity > 0 && item.price > 0
+    );
+    if (!hasValidItems) newErrors.push("Au moins un article avec description, quantité et prix est obligatoire");
+
+    // Validation spécifique des articles
+    items.forEach((item, index) => {
+      if (item.description.trim() && (item.quantity <= 0 || item.price <= 0)) {
+        newErrors.push(`Article ${index + 1}: Quantité et prix doivent être supérieurs à 0`);
+      }
+    });
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
   };
 
   // Charger le numéro de facture au chargement du composant
@@ -122,68 +154,95 @@ const FactureGenerator = () => {
     return `facture_${year}${month}${day}.pdf`;
   };
 
+  // Fonction pour gérer l'impression
+  const handlePrint = () => {
+    if (!validateFields()) {
+      return; // Arrêter si validation échoue
+    }
+    
+    // Générer le numéro de facture APRÈS validation
+    const newFactureNumber = generateFactureNumber();
+    setFactureNumber(newFactureNumber);
+    
+    // Attendre que le state se mette à jour puis imprimer
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
+
   // Fonction pour générer et télécharger le PDF
   const generatePDF = () => {
-    const element = factureRef.current;
-    if (!element) return;
+    if (!validateFields()) {
+      return; // Arrêter si validation échoue
+    }
+    
+    // Générer le numéro de facture APRÈS validation
+    const newFactureNumber = generateFactureNumber();
+    setFactureNumber(newFactureNumber);
+    
+    // Attendre que le state se mette à jour puis générer le PDF
+    setTimeout(() => {
+      const element = factureRef.current;
+      if (!element) return;
 
-    // Créer un élément temporaire pour la capture
-    const tempDiv = document.createElement('div');
-    tempDiv.className = 'pdf-container';
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '-9999px';
-    tempDiv.style.width = '210mm'; // Format A4
-    tempDiv.style.padding = '10mm';
-    
-    // Copier le contenu de la facture
-    tempDiv.innerHTML = element.innerHTML;
-    
-    // Ajuster quelques styles pour le PDF
-    const styles = document.createElement('style');
-    styles.textContent = `
-      .pdf-container * {
-        font-family: Arial, sans-serif;
-      }
-      .pdf-container table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .pdf-container th, .pdf-container td {
-        border: 1px solid #ddd;
-        padding: 8px;
-      }
-      .print\\:hidden { display: none; }
-      .print\\:border-none { border: none; }
-      .print\\:shadow-none { box-shadow: none; }
-    `;
-    
-    tempDiv.appendChild(styles);
-    document.body.appendChild(tempDiv);
-    
-    // Utiliser html2canvas pour capturer l'élément en image
-    import('html2canvas').then(({ default: html2canvas }) => {
-      html2canvas(tempDiv, { scale: 2 }).then(canvas => {
-        // Utiliser jsPDF pour créer un PDF
-        import('jspdf').then(({ default: jsPDF }) => {
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          
-          // Ajouter l'image de la facture au PDF
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = 190; // Largeur de la page A4 moins les marges
-          const imgHeight = canvas.height * imgWidth / canvas.width;
-          
-          pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-          
-          // Télécharger le PDF
-          const fileName = generateFileName();
-          pdf.save(fileName);
-          
-          // Nettoyer
-          document.body.removeChild(tempDiv);
+      // Créer un élément temporaire pour la capture
+      const tempDiv = document.createElement('div');
+      tempDiv.className = 'pdf-container';
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '-9999px';
+      tempDiv.style.width = '210mm'; // Format A4
+      tempDiv.style.padding = '10mm';
+      
+      // Copier le contenu de la facture
+      tempDiv.innerHTML = element.innerHTML;
+      
+      // Ajuster quelques styles pour le PDF
+      const styles = document.createElement('style');
+      styles.textContent = `
+        .pdf-container * {
+          font-family: Arial, sans-serif;
+        }
+        .pdf-container table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .pdf-container th, .pdf-container td {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        .print\\:hidden { display: none; }
+        .print\\:border-none { border: none; }
+        .print\\:shadow-none { box-shadow: none; }
+      `;
+      
+      tempDiv.appendChild(styles);
+      document.body.appendChild(tempDiv);
+      
+      // Utiliser html2canvas pour capturer l'élément en image
+      import('html2canvas').then(({ default: html2canvas }) => {
+        html2canvas(tempDiv, { scale: 2 }).then(canvas => {
+          // Utiliser jsPDF pour créer un PDF
+          import('jspdf').then(({ default: jsPDF }) => {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Ajouter l'image de la facture au PDF
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 190; // Largeur de la page A4 moins les marges
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            
+            // Télécharger le PDF
+            const fileName = generateFileName();
+            pdf.save(fileName);
+            
+            // Nettoyer
+            document.body.removeChild(tempDiv);
+          });
         });
       });
-    });
+    }, 100);
   };
 
   // Calculer le montant net à payer
@@ -191,8 +250,54 @@ const FactureGenerator = () => {
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto">
+      {/* Bannière d'information importante */}
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">
+              ⚠️ Information importante sur la confidentialité
+            </h3>
+            <div className="mt-2 text-sm text-blue-700">
+              <p className="mb-2">
+                <strong>🔒 Vos données sont confidentielles :</strong>
+              </p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Aucune donnée n'est stockée sur nos serveurs</li>
+                <li>Vos informations restent uniquement dans votre navigateur</li>
+                <li>Nous n'utilisons pas vos données à des fins commerciales</li>
+              </ul>
+              <p className="mt-2 font-semibold text-red-600">
+                ⚡ IMPORTANT : Générez ou imprimez votre facture avant de quitter la page, 
+                sinon vos données seront perdues !
+              </p>
+              <p className="mb-2">
+              <strong>👨‍💻 Développeur :</strong> AIT DJOUDI OUFELLA Boussad — accompagné par un guide en Intelligence Artificielle
+
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="p-4 bg-white shadow-md mb-4">
         <h1 className="text-2xl font-bold mb-4">Générateur de Factures</h1>
+        
+        {/* Affichage des erreurs */}
+        {errors.length > 0 && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <h3 className="font-bold mb-2">Erreurs de validation :</h3>
+            <ul className="list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         
         {/* Section Fournisseur */}
         <div className="mb-6">
@@ -417,7 +522,7 @@ const FactureGenerator = () => {
         {/* Boutons d'action */}
         <div className="flex justify-end space-x-4">
           <button 
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             <Printer className="w-5 h-5 mr-2" />
@@ -446,7 +551,7 @@ const FactureGenerator = () => {
               <p>FRANCE</p>
               <p>SIRET : {fournisseur.siret}</p>
               {/* <p>Page : 1/1</p> */}
-              <p>Numéro de facture : {factureNumber ? `${factureNumber.slice(0, 4)}-${factureNumber.slice(4, 6)}-${factureNumber.slice(6, 8)}-${factureNumber.slice(8)}` : ''}</p>
+              <p>Numéro de facture : {factureNumber || 'Non généré'}</p>
             </div>
             <div>
               <p className="font-bold">Client :</p>
